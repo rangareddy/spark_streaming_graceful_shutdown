@@ -1,5 +1,11 @@
 # Spark Streaming Graceful Shutdown
 
+## Table of Contents
+
+1. [Introduction](https://github.com/rangareddy/spark_streaming_graceful_shutdown/edit/main/README.md#1-introduction)
+2. [Prerequisites](https://github.com/rangareddy/spark_streaming_graceful_shutdown/edit/main/README.md#2-prerequisites)
+3. [Build, Deploy and Run the Spark Streaming Application](https://github.com/rangareddy/spark_streaming_graceful_shutdown/edit/main/README.md#3-build-deploy-and-run-the-spark-streaming-application)
+
 ## 1) Introduction
 
 Spark Streaming jobs are **long-running jobs** and their tasks need to be executed **7*24** hours, but there are cases 
@@ -36,16 +42,16 @@ There are several ways to gracefully shutdown a Spark Streaming application:
 4) Expose the interface to the outside world and provide the shutdown function
 </p>
 
-## 2\.) Prerequisites 
+## 2) Prerequisites 
 
 | Component | Version |
-| --------- | ------- |
+|-----------|---------|
 | Java      | 1.8     |
 | Scala     | 2.11.12 |
 | Spark     | 2.4.7   |
 | Kafka     | 2.5.0   |
 
-## 3\.) Build and Deploy and Run the Spark Streaming Application
+## 3) Build, Deploy and Run the Spark Streaming Application
 
 ### 3.1) Build and Deploy the Application
 
@@ -72,15 +78,10 @@ $ mkdir -p /apps/spark/spark_streaming_graceful_shutdown
 $ chmod 755 /apps/spark/spark_streaming_graceful_shutdown
 ```
 
-#### 4. Copy the necessary JAR files and shell scripts to run the application.
+#### 4. Copy the JAR file to the Spark gateway node
 
 ```sh
 $ scp target/spark-streaming-graceful-shutdown-1.0.0-SNAPSHOT.jar username@mynode.host.com:/apps/spark/spark_streaming_graceful_shutdown
-```
-
-```shell
-$ scp run_spark_streaming_socket_graceful_shutdown_app.sh username@mynode.host.com:/apps/spark/spark-streaming-graceful-shutdown
-$ scp run_spark_streaming_kafka_graceful_shutdown_app.sh username@mynode.host.com:/apps/spark/spark-streaming-graceful-shutdown
 ```
 
 ### 3.2) Run the Spark Streaming application using the Socket source
@@ -91,7 +92,13 @@ $ scp run_spark_streaming_kafka_graceful_shutdown_app.sh username@mynode.host.co
 $ nc -lk 9999
 ```
 
-#### 2. Log in to the Spark gateway node, such as "mynode.host.com", and execute the application.
+#### 2. Copy the run script file to the Spark gateway node such as "mynode.host.com"
+
+```shell
+$ scp run_spark_streaming_socket_graceful_shutdown_app.sh username@mynode.host.com:/apps/spark/spark_streaming_graceful_shutdown
+```
+
+#### 3. Log in to the Spark gateway node, such as "mynode.host.com", and execute the application.
 
 Before running the application, please ensure the following:
 
@@ -101,7 +108,7 @@ Before running the application, please ensure the following:
 Once you have confirmed these details, you can proceed to run the application.
 
 ```sh
-sh /apps/spark/spark-streaming-graceful-shutdown/run_spark_streaming_socket_graceful_shutdown_app.sh
+sh /apps/spark/spark_streaming_graceful_shutdown/run_spark_streaming_socket_graceful_shutdown_app.sh
 ```
 
 The script will prompt you to enter an option based on the desired approach:
@@ -138,7 +145,13 @@ kafka-console-producer --bootstrap-server localhost:9092 --topic test-topic < my
 kafka-console-consumer --bootstrap-server localhost:9092 --topic test-topic --from-beginning
 ```
 
-#### 4. Login to spark gateway node (for example mynode.host.com) and run the application.
+#### 4. Copy the run script file to the Spark gateway node such as "mynode.host.com"
+
+```shell
+$ scp run_spark_streaming_socket_graceful_shutdown_app.sh username@mynode.host.com:/apps/spark/spark_streaming_graceful_shutdown
+```
+
+#### 5. Login to spark gateway node (for example mynode.host.com) and run the application.
 
 Before running the application, please verify the following:
 
@@ -153,7 +166,7 @@ BOOTSTRAP_SERVERS="kafka1:9092,kafka2:9092,kafka3:9092"
 c) Ensure that the Kafka broker endpoints are correct and accessible from the machine where you are running the script.
 
 ```sh
-sh /apps/spark/spark-streaming-graceful-shutdown/run_spark_streaming_kafka_graceful_shutdown_app.sh
+sh /apps/spark/spark_streaming_graceful_shutdown/run_spark_streaming_kafka_graceful_shutdown_app.sh
 ```
 
 The script will prompt you to enter an option based on the desired approach:
@@ -168,9 +181,11 @@ After entering the required information, the script will proceed accordingly.
 
 #### 1. Stop the Spark Streaming Job using Shutdown Hook Approach
 
+**Client Mode:**
+
 a) There are multiple ways to send the shutdown hook signal. One of the mostly used approach is by pressing the Ctrl+C.
 
-#### 2. Stop the Spark Streaming Job using Shutdown Signal Approach
+**Cluster Mode:**
 
 a) Go to the Spark UI and find out the driver hostname from the Executors tab.
 
@@ -197,14 +212,55 @@ c) Kill the process id.
     -   Run the following command to kill the Application Master process:
 
     ```sh
-    kill <process_id>`
+    kill -9 <process_id>`
+    ```
+
+    -   Replace <process_id> with the actual process id you obtained in the previous step.
+
+#### 2. Stop the Spark Streaming Job using Shutdown Signal Approach
+
+**Client Mode:**
+
+a) There are multiple ways to send the shutdown hook signal. One of the mostly used approach is by pressing the Ctrl+C.
+
+**Cluster Mode:**
+
+a) Go to the Spark UI and find out the driver hostname from the Executors tab.
+
+    -   Access the Spark UI by navigating to the URL of your Spark cluster (e.g., http://spark-master:4040).
+    
+    -   Click on the Executors tab in the Spark UI.
+
+    -   Look for the row that represents the driver, and note down the hostname of the driver.
+
+b) Login to the Driver host and find out the Application Master process id.
+
+    -   Open a terminal or SSH into the host machine where the Spark driver is running.
+
+    -   Run the following command to find the process id (PID) of the Application Master:
+
+    ```shell
+    jps -m | grep "spark.deploy.master.Master"
+    ```
+
+    -   The above command will display the process id and other information of the Spark Application Master. Note down the process id.
+
+c) Kill the process id.
+
+    -   Run the following command to kill the Application Master process:
+
+    ```sh
+    kill -9 <process_id>`
     ```
 
     -   Replace <process_id> with the actual process id you obtained in the previous step.
 
 #### 3. Stop the Spark Streaming Job using Shutdown Marker Approach
 
+In this approach, stopping the Spark Streaming job is same for both client and cluster mode.
+
 a) Collect the marker file path specified while running the Spark application. For example, marker file path is 
+
 `/apps/spark/streaming/shutdown/spark_streaming_kafka_marker_file`.
 
 b) Create an hdfs directory
@@ -219,9 +275,13 @@ c) Create a marker file under an HDFS directory
 # hdfs dfs -touch /apps/spark/streaming/shutdown/spark_streaming_kafka_marker_file
 ```
 
+> Make sure submitted user has access to the above path.
+
 d) Once the application is successfully stopped then marker file will be deleted automatically.
 
 #### 4. Stop the Spark Streaming Job using Shutdown HTTP Approach
+
+In this approach, stopping the Spark Streaming job is same for both client and cluster mode.
 
 a) Collect the HTTP port specified while running the Spark application. For example the http port is `3443`.
 
