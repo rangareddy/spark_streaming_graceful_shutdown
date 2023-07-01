@@ -1,5 +1,7 @@
 # Spark Streaming Graceful Shutdown
 
+![Graceful Shutdown Logo](graceful_shutdown_logo.png)
+
 ## Table of Contents
 
 <details open>
